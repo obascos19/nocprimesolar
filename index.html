@@ -851,6 +851,10 @@ a[href="#special"],a[href="#site-survey"],#pinForm,#engBtn,#lockBtn,#qNote,#qNot
 label[for="kbHi"],label[for="kbAvg"]{display:none!important}
 .row3:has(#kbNow){grid-template-columns:minmax(0,1fr)!important}
 .esschk:not(.futchk){display:none!important}
+
+.billchk{margin:14px 0 8px;padding:12px 14px;border:1px solid var(--line,#d9e3e1);border-radius:12px;background:#f3faf8}
+.billchk .f{max-width:320px}.billchk .hint{margin:6px 0 0}
+.tgtmini .kbs{display:inline-block;margin-top:8px;font-weight:700}
 </style>
 <header class="top">
   <div class="wrap">
@@ -1428,6 +1432,21 @@ const chain=$$("chain");if(chain)new MutationObserver(()=>{scrub();clearTimeout(
   force();
   document.addEventListener("change",e=>{const n=e.target&&e.target.name;if(n==="kbPv"||n==="kbUse"){force();try{update();}catch(x){}}},true);
   try{update();}catch(e){}
+})();
+/* NOC_BILLCHK: bill kWh box right under the appliance totals, with the checker */
+(function(){
+  const tot=$$("appTotal");if(!tot)return;
+  const box=document.createElement("div");box.className="billchk";box.id="billChk";
+  box.innerHTML=`<label class="f" for="bcKwh">kWh used on your bill this month<input id="bcKwh" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 529"></label><p class="hint" id="bcHint">Type it to check the appliance list against your bill.</p>`;
+  tot.parentNode.insertBefore(box,tot);
+  const inp=$$("bcKwh"),main=$$("kbNow");
+  const sync=()=>{const v=(ST.kb&&ST.kb.now)||0;if(document.activeElement!==inp)inp.value=v>0?v:"";$$("bcHint").hidden=v>0;};
+  inp.addEventListener("input",()=>{const v=parseFloat(inp.value);ST.kb=ST.kb||{};ST.kb.now=v>0?v:0;ST.kb.use="now";
+    if(main){main.value=v>0?v:"";main.dispatchEvent(new Event("input",{bubbles:true}));}
+    try{update();}catch(e){}sync();});
+  if(main)main.addEventListener("input",()=>setTimeout(sync,0));
+  new MutationObserver(sync).observe(tot,{childList:true});
+  sync();
 })();
 scrub();renderSummary();
 })();

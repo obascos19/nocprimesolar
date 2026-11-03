@@ -827,6 +827,10 @@ a[href="#special"],a[href="#site-survey"],#pinForm,#engBtn,#lockBtn,#qNote,#qNot
 .quickq{font-weight:700}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px}
 .chip{border:1.5px solid var(--navy2);background:var(--surface);color:var(--navy);border-radius:999px;padding:9px 16px;font:700 .95rem var(--body);cursor:pointer}
 .chip:hover,.chip.on{background:var(--navy);color:#fff}
+.util{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-bottom:6px}
+.util select,.util input{width:100%}
+#utilNote{margin-bottom:12px}
+@media (max-width:420px){.util{grid-template-columns:1fr}}
 </style>
 <header class="top">
   <div class="wrap">
@@ -913,9 +917,19 @@ a[href="#special"],a[href="#site-survey"],#pinForm,#engBtn,#lockBtn,#qNote,#qNot
       <div><span>2</span><p><b>See your system:</b> panels, inverter, battery, wires and breakers, with the full computation.</p></div>
       <div><span>3</span><p><b>Show your summary</b> at the NOC Prime Solar kiosk for your free proposal.</p></div>
     </div>
-    <div class="quick"><p class="quickq">Quick start <span class="hint">Tap a typical monthly bill to fill Step 1, then type your own.</span></p>
+    <div class="quick">
+      <div class="util">
+        <label class="f" for="utilSel">Your electric utility<select id="utilSel">
+          <option value="meralco" data-rate="15.0615">Meralco</option>
+          <option value="batelec1" data-rate="11.3386">BATELEC I</option>
+          <option value="batelec2" data-rate="11.7671">BATELEC II</option>
+          <option value="other" data-rate="">Other utility</option></select></label>
+        <label class="f" for="utilRate">Rate (₱ per kWh)<input id="utilRate" type="number" min="1" max="60" step="0.0001" inputmode="decimal"></label>
+      </div>
+      <p class="hint" id="utilNote"></p>
+      <p class="quickq">Quick start <span class="hint">Tap a typical monthly bill to fill Step 1, then type your own.</span></p>
       <div class="chips"><button type="button" class="chip" data-bill="3000">₱3,000 bill</button><button type="button" class="chip" data-bill="6000">₱6,000 bill</button><button type="button" class="chip" data-bill="10000">₱10,000 bill</button><button type="button" class="chip" data-bill="15000">₱15,000 bill</button><button type="button" class="chip" data-bill="25000">₱25,000 bill</button></div>
-      <p class="hint">Assumes ₱15.06 per kWh. No sign up needed; your inputs stay on this phone.</p></div>
+      <p class="hint">No sign up needed; your inputs stay on this phone. Only know your bill amount? Type it in Step 1 and the kWh is filled in from your rate.</p></div>
     <div class="est">
       <div class="steps">
         <div class="srcpick" role="radiogroup" aria-label="What is the design based on?">
@@ -1298,9 +1312,31 @@ $$("xlsOut").addEventListener("click",async()=>{try{const d=design(),wb=new Exce
   catch(e){msg("xlsMsg","Could not export: "+e.message);}});
 $$("prtBtn").addEventListener("click",()=>{try{window.print();}catch(e){msg("xlsMsg","Printing is not available here; use your browser's Share or Print menu.");}});
 
+/* electric utility and rate: Meralco Oct 2026, BATELEC I Sep 2026, BATELEC II (Lipa, Tanauan) Jul 2026; editable */
+const UNOTE={meralco:"Meralco typical household rate, October 2026. Check your latest bill and edit if needed.",
+  batelec1:"BATELEC I residential rate, September 2026 (latest posted). Check your latest bill and edit if needed.",
+  batelec2:"BATELEC II residential rate (Lipa, Tanauan), July 2026. Check your latest bill and edit if needed.",
+  other:"Type your rate: Total Amount ÷ kWh on your latest bill."};
+const U=store.get("noc_free_util",{u:"meralco",rate:15.0615});
+const uSel=$$("utilSel"),uRate=$$("utilRate");
+function rateNow(){const v=parseFloat(uRate.value);return v>0?v:15.0615;}
+function fire(el){if(!el)return;el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));}
+function utilApply(fromSelect){if(fromSelect){const o=uSel.selectedOptions[0];if(o.dataset.rate)uRate.value=o.dataset.rate;}
+  U.u=uSel.value;U.rate=rateNow();store.set("noc_free_util",U);$$("utilNote").textContent=UNOTE[U.u]||"";
+  const ri=$$("rateIn");if(ri){ri.value=U.rate;fire(ri);}          /* appliance mode rate */
+  if(autoK)fillK();}
+if(uSel){uSel.value=U.u;uRate.value=U.rate;$$("utilNote").textContent=UNOTE[U.u]||"";
+  uSel.addEventListener("change",()=>utilApply(true));
+  uRate.addEventListener("input",()=>{const o=[...uSel.options].find(x=>x.dataset.rate&&Math.abs(+x.dataset.rate-rateNow())<1e-6);uSel.value=o?o.value:"other";utilApply(false);});}
+/* bill step: if only the amount is typed, fill the kWh from the rate */
+let autoK=store.get("noc_free_autok",false);
+function fillK(){const a=parseFloat(($$("bA0")||{}).value),k=$$("bK0");if(!k||!(a>0))return;k.value=Math.round(a/rateNow());autoK=true;store.set("noc_free_autok",true);fire(k);}
+if($$("bA0"))$$("bA0").addEventListener("input",e=>{if(!e.isTrusted)return;const k=$$("bK0");if(!k.value||autoK)fillK();});
+if($$("bK0"))$$("bK0").addEventListener("input",e=>{if(e.isTrusted){autoK=false;store.set("noc_free_autok",false);}});
+setTimeout(()=>{const ri=$$("rateIn");if(ri&&Math.abs(parseFloat(ri.value)-U.rate)>1e-6){ri.value=U.rate;fire(ri);}},300);
 /* quick start: a typical bill fills Step 1 in bill mode */
 document.querySelectorAll(".chip[data-bill]").forEach(btn=>btn.addEventListener("click",()=>{
-  const bill=+btn.dataset.bill,kwh=Math.round(bill/15.06);
+  const bill=+btn.dataset.bill,kwh=Math.round(bill/rateNow());autoK=true;store.set("noc_free_autok",true);
   const src=$$("srcBill");if(src&&!src.checked){src.checked=true;src.dispatchEvent(new Event("change",{bubbles:true}));src.click&&src.click();}
   [["bK0",kwh],["bA0",bill]].forEach(([id,v])=>{const el=$$(id);if(!el)return;el.value=v;el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));});
   document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c===btn));

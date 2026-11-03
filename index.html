@@ -945,7 +945,7 @@ label[for="kbHi"],label[for="kbAvg"]{display:none!important}
       <div class="util">
         <label class="f" for="utilSel">Your electric utility<select id="utilSel">
           <option value="meralco" data-rate="15.0615">Meralco</option>
-          <option value="batelec1" data-rate="11.3386">BATELEC I</option>
+          <option value="batelec1" data-rate="10.6110">BATELEC I</option>
           <option value="batelec2" data-rate="10.5708">BATELEC II</option>
           <option value="other" data-rate="">Other utility</option></select></label>
         <label class="f" for="utilRate">Rate (₱ per kWh)<input id="utilRate" type="number" min="1" max="60" step="0.0001" inputmode="decimal"></label>
@@ -1343,9 +1343,9 @@ $$("xlsOut").addEventListener("click",async()=>{try{const d=design(),wb=new Exce
   catch(e){msg("xlsMsg","Could not export: "+e.message);}});
 $$("prtBtn").addEventListener("click",()=>{try{window.print();}catch(e){msg("xlsMsg","Printing is not available here; use your browser's Share or Print menu.");}});
 
-/* electric utility and rate: Meralco Oct 2026, BATELEC I Sep 2026, BATELEC II Oct 2026 (from a residential bill: ₱1,627.90 ÷ 154 kWh); editable */
+/* electric utility and rate: Meralco Oct 2026, BATELEC I Sep 2026 (from a bill: ₱9,995.56 ÷ 942 kWh), BATELEC II Oct 2026 (from a residential bill: ₱1,627.90 ÷ 154 kWh); editable */
 const UNOTE={meralco:"Meralco typical household rate, October 2026. Check your latest bill and edit if needed.",
-  batelec1:"BATELEC I residential rate, September 2026 (latest posted). Check your latest bill and edit if needed.",
+  batelec1:"BATELEC I residential, September 2026 (Lian bill: Bill Amount ÷ KWH Used). Check your latest bill and edit if needed.",
   batelec2:"BATELEC II residential, October 2026 (Lipa bill: Total Amount Due ÷ Total KWH Used). Check your latest bill and edit if needed.",
   other:"Type your rate: Total Amount ÷ kWh on your latest bill."};
 const U=store.get("noc_free_util",{u:"meralco",rate:15.0615});

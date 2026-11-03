@@ -844,6 +844,13 @@ a[href="#special"],a[href="#site-survey"],#pinForm,#engBtn,#lockBtn,#qNote,#qNot
 .runrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .runrow small{display:block;color:#5b6b69;font-size:.78em;margin-top:2px}
 @media (max-width:640px){.runrow{grid-template-columns:minmax(0,1fr)}}
+
+/* NOC_SIMPLE */
+.kbuse label:has(input[name="kbPv"]:not([value="list"])),
+.kbuse label:has(input[name="kbUse"]:not([value="now"])){display:none!important}
+label[for="kbHi"],label[for="kbAvg"]{display:none!important}
+.row3:has(#kbNow){grid-template-columns:minmax(0,1fr)!important}
+.esschk:not(.futchk){display:none!important}
 </style>
 <header class="top">
   <div class="wrap">
@@ -996,7 +1003,7 @@ a[href="#special"],a[href="#site-survey"],#pinForm,#engBtn,#lockBtn,#qNote,#qNot
             <p class="hint" id="kbPvNote"></p></div>
         </div>
         <div class="step" id="stepTl" hidden>
-          <div class="stephead"><span class="no">2</span><div><h3>When is each appliance used?</h3><p>One bar per appliance. The number in each box is the starting hour. Tap or drag the hours it is on, even in separate blocks (e.g. aircon 9AM to 11AM, 4PM to 7PM, 1AM to 3AM). Tick Essential if it must run during a brownout.</p></div></div>
+          <div class="stephead"><span class="no">2</span><div><h3>When is each appliance used?</h3><p>One bar per appliance. The number in each box is the starting hour. Tap or drag the hours it is on, even in separate blocks (e.g. aircon 9AM to 11AM, 4PM to 7PM, 1AM to 3AM).</p></div></div>
           <div class="tl">
             <div class="tlhead">
               <div class="daynight"><span class="d">Day · 6AM to 5PM</span><span class="nt">Night · 6PM to 5AM · battery</span></div>
@@ -1408,6 +1415,18 @@ const chain=$$("chain");if(chain)new MutationObserver(()=>{scrub();clearTimeout(
   RUNS.forEach(([k])=>{const el=$$("run_"+k);if(ST.site[k]>0)el.value=ST.site[k];
     el.addEventListener("input",()=>{const v=parseFloat(el.value);ST.site[k]=v>0?Math.min(300,v):0;
       const o=store.get("noc_free_runs",{})||{};o[k]=ST.site[k]||"";store.set("noc_free_runs",o);try{update();}catch(e){}});});
+  try{update();}catch(e){}
+})();
+/* NOC_SIMPLE: panels follow the appliance list only, the list is matched to this bill only, no essential flags */
+(function(){
+  function force(){
+    ST.kb=ST.kb||{};ST.kb.pv="list";ST.kb.use="now";ST.basis="Whole house";
+    document.querySelectorAll('input[name="kbPv"]').forEach(r=>{r.checked=r.value==="list";});
+    document.querySelectorAll('input[name="kbUse"]').forEach(r=>{r.checked=r.value==="now";});
+    const op=$$("optPv");if(op){[...op.options].forEach(o=>{if(o.value!=="list")o.remove();});op.value="list";}
+  }
+  force();
+  document.addEventListener("change",e=>{const n=e.target&&e.target.name;if(n==="kbPv"||n==="kbUse"){force();try{update();}catch(x){}}},true);
   try{update();}catch(e){}
 })();
 scrub();renderSummary();
